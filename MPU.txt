@@ -1,0 +1,63 @@
+#include <Wire.h>
+#include <MPU6050.h>
+
+MPU6050 mpu;
+
+const float alpha = 0.5; // Low-pass filter coefficient (adjust as needed)
+const float beta = 0.5;  // High-pass filter coefficient (adjust as needed)
+
+float accelX, accelY, accelZ;
+float gyroX, gyroY, gyroZ;
+
+float lpfAccelX, lpfAccelY, lpfAccelZ;
+float hpfAccelX, hpfAccelY, hpfAccelZ;
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+
+  mpu.initialize();
+  if (mpu.testConnection()) {
+    Serial.println("MPU6050 connection successful");
+  } else {
+    Serial.println("MPU6050 connection failed");
+    while (1);
+  }
+
+  // Initialize filter values
+  lpfAccelX = lpfAccelY = lpfAccelZ = 0;
+  hpfAccelX = hpfAccelY = hpfAccelZ = 0;
+
+  // Add labels for the Serial Plotter
+  Serial.println("RawX,LPF_X,HPF_X");
+}
+
+void loop() {
+  // Read raw accelerometer and gyroscope data
+  accelX = mpu.getAccelerationX() / 16384.0; // Scale factor to convert to 'g'
+  accelY = mpu.getAccelerationY() / 16384.0;
+  accelZ = mpu.getAccelerationZ() / 16384.0;
+  
+  gyroX = mpu.getRotationX() / 131.0; // Scale factor to convert to 'deg/s'
+  gyroY = mpu.getRotationY() / 131.0;
+  gyroZ = mpu.getRotationZ() / 131.0;
+
+  // Apply low-pass filter
+  lpfAccelX = alpha * accelX + (1 - alpha) * lpfAccelX;
+  lpfAccelY = alpha * accelY + (1 - alpha) * lpfAccelY;
+  lpfAccelZ = alpha * accelZ + (1 - alpha) * lpfAccelZ;
+
+  // Apply high-pass filter
+  hpfAccelX = beta * (hpfAccelX + accelX - lpfAccelX);
+  hpfAccelY = beta * (hpfAccelY + accelY - lpfAccelY);
+  hpfAccelZ = beta * (hpfAccelZ + accelZ - lpfAccelZ);
+
+  // Output values for Serial Plotter
+  Serial.print(accelX, 2);  // Raw signal
+  Serial.print(",");
+  Serial.print(lpfAccelX, 2);  // Low-pass filtered signal
+  Serial.print(",");
+  Serial.println(hpfAccelX, 2);  // High-pass filtered signal
+
+  delay(10000);
+}

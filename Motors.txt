@@ -1,0 +1,90 @@
+#include <Servo.h>
+
+// Define the motors
+Servo motorFL; // Front-Left Motor
+Servo motorFR; // Front-Right Motor
+Servo motorBL; // Back-Left Motor
+Servo motorBR; // Back-Right Motor
+
+// Define the motor pins (PWM-capable pins only)
+const int motorFLPin = 5;  // Front-Left Motor connected to pin 5 (Changed from 6)
+const int motorFRPin = 9;  // Front-Right Motor connected to pin 9
+const int motorBLPin = 10; // Back-Left Motor connected to pin 10
+const int motorBRPin = 11; // Back-Right Motor connected to pin 11
+
+// Minimum and maximum throttle values
+const int minThrottle = 1000; // Minimum ESC signal (in microseconds)
+const int maxThrottle = 2000; // Maximum ESC signal (in microseconds)
+
+void setup() {
+  Serial.begin(9600);
+
+  // Attach the motors to the pins
+  motorFL.attach(motorFLPin);
+  motorFR.attach(motorFRPin);
+  motorBL.attach(motorBLPin);
+  motorBR.attach(motorBRPin);
+
+  Serial.println("Starting ESC Calibration...");
+
+  // Step 1: Calibrate the ESCs
+  calibrateMotors();
+
+  // Step 2: Arm the ESCs
+  armMotors();
+
+  // Step 3: Run motors at maximum speed
+  Serial.println("Running motors at maximum speed...");
+  setMotorSpeeds(maxThrottle);
+
+  // Confirm signal sent to all motors
+  Serial.println("All motors set to maximum speed.");
+}
+
+void loop() {
+  // Motors will run at maximum speed indefinitely
+}
+
+// Function to calibrate the motors
+void calibrateMotors() {
+  Serial.println("Calibrating ESCs...");
+
+  // Send maximum throttle signal
+  setMotorSpeeds(maxThrottle);
+  Serial.println("Sending maximum throttle... Please connect power to the ESCs now.");
+  delay(5000); // Wait for 5 seconds for ESCs to recognize maximum throttle
+
+  // Send minimum throttle signal
+  setMotorSpeeds(minThrottle);
+  Serial.println("Sending minimum throttle... ESCs should now be calibrated.");
+  delay(3000); // Wait for 3 seconds to ensure calibration completes
+
+  Serial.println("Calibration complete.");
+}
+
+// Function to arm the ESCs
+void armMotors() {
+  Serial.println("Arming ESCs...");
+  setMotorSpeeds(minThrottle);
+  delay(3000); // Wait for 3 seconds to arm ESCs
+  Serial.println("Motors armed.");
+}
+
+// Function to set all motor speeds
+void setMotorSpeeds(int throttleValue) {
+  throttleValue = constrain(throttleValue, minThrottle, maxThrottle);
+  motorFL.writeMicroseconds(throttleValue);
+  motorFR.writeMicroseconds(throttleValue);
+  motorBL.writeMicroseconds(throttleValue);
+  motorBR.writeMicroseconds(throttleValue);
+
+  // Debugging output to confirm signals sent
+  Serial.print("Front-Left Motor (Pin 5): ");
+  Serial.println(throttleValue);
+  Serial.print("Front-Right Motor (Pin 9): ");
+  Serial.println(throttleValue);
+  Serial.print("Back-Left Motor (Pin 10): ");
+  Serial.println(throttleValue);
+  Serial.print("Back-Right Motor (Pin 11): ");
+  Serial.println(throttleValue);
+}
